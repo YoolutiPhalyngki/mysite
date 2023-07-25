@@ -6,6 +6,9 @@
 </head>
 <body>
     <h1>This is a template, this is being rendered!</h1>
-    {{ products }}
+    
+    {% for product in products %}
+        {{ product.name }} -> {{ product.price }} -> {{ product.desc }} </br> 
+    {% endfor %}
 </body>
 </html>
