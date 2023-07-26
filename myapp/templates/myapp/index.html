@@ -1,18 +1,14 @@
+{% extends "myapp/base.html" %}
 {% load static %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{% static 'myapp/style.css' %}">
-    <title>Document</title>
-</head>
-<body>
-    <h1>This is a template, this is being rendered!</h1>
+{% block content %}
+
+    
     
     {% for product in products %}
     <a href="{% url 'myapp:product_detail' product.id %}">
         {{ product.name }} -> {{ product.price }} -> {{ product.desc }} </br> 
+        <img src="{{product.image.url}}" alt="">
     </a>
     {% endfor %}
-</body>
-</html>
+
+{% endblock  %}
