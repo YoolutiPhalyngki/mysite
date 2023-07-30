@@ -2,17 +2,25 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from .models import Product
+from django.views.generic import ListView, DetailView
 
 # Create your views here.
 def index(request):
     return HttpResponse("Hello World")
 
-def products(request):
-    products = Product.objects.all()
-    context = {
-        'products': products
-    }
-    return render(request, 'myapp/index.html', context)
+## Replace by ProductListView class below
+# def products(request):
+#     products = Product.objects.all()
+#     context = {
+#         'products': products
+#     }
+#     return render(request, 'myapp/index.html', context)
+
+#Class basesd view for above products view [ListView]
+class ProductListView(ListView):
+    model = Product
+    template_name = 'myapp/index.html'
+    context_object_name = 'products'
 
 def product_detail(request, id):
     product = Product.objects.get(id=id)
@@ -20,6 +28,12 @@ def product_detail(request, id):
         'product': product
     }
     return render(request, 'myapp/detail.html', context)
+
+#Class based view for above product detail view [DetailView]
+class ProductDetailView(DetailView):
+    model = Product
+    template_name = 'myapp/detail.html'
+    context_object_name = 'product'
 
 @login_required
 def add_product(request):
