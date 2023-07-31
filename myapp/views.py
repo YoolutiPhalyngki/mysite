@@ -3,6 +3,8 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from .models import Product
 from django.views.generic import ListView, DetailView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
 
 # Create your views here.
 def index(request):
@@ -47,6 +49,11 @@ def add_product(request):
         product.save()
     return render(request, 'myapp/addproduct.html')
 
+# Class based view for creating a product
+class ProductCreateView(CreateView):
+    model = Product
+    fields = ['name', 'price', 'desc', 'image', 'seller_name']
+
 def update_product(request, id):
     product = Product.objects.get(id=id)
     if request.method == 'POST':
@@ -61,6 +68,11 @@ def update_product(request, id):
     }
     return render(request, 'myapp/updateproduct.html', context)
 
+class ProductUpdateView(UpdateView):
+    model = Product
+    fields = ['name', 'price', 'desc', 'image', 'seller_name']
+    template_name_suffix = '_update_form'
+
 def delete_product(request, id):
     product = Product.objects.get(id=id)
     context = {
@@ -70,6 +82,12 @@ def delete_product(request, id):
         product.delete()
         return redirect('/myapp/products')
     return render(request, 'myapp/delete.html', context)
+
+# Class based delete view
+class ProductDelete(DeleteView):
+    model = Product
+    success_url = reverse_lazy('myapp:products')
+
 
 def my_listings(request):
     products = Product.objects.filter(seller_name=request.user)
