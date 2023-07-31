@@ -23,6 +23,7 @@ class ProductListView(ListView):
     model = Product
     template_name = 'myapp/index.html'
     context_object_name = 'products'
+    paginate_by = 3
 
 def product_detail(request, id):
     product = Product.objects.get(id=id)
@@ -53,6 +54,13 @@ def add_product(request):
 class ProductCreateView(CreateView):
     model = Product
     fields = ['name', 'price', 'desc', 'image', 'seller_name']
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.seller_name = request.user
+            obj.save()
+        return redirect('myapp:products')
 
 def update_product(request, id):
     product = Product.objects.get(id=id)
