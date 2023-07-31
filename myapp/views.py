@@ -5,18 +5,27 @@ from .models import Product
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django.core.paginator import Paginator
 
 # Create your views here.
 def index(request):
     return HttpResponse("Hello World")
 
 ## Replace by ProductListView class below
-# def products(request):
-#     products = Product.objects.all()
-#     context = {
-#         'products': products
-#     }
-#     return render(request, 'myapp/index.html', context)
+def products(request):
+    page_obj = products = Product.objects.all()
+    
+    product_name = request.GET.get('product_name')
+    if product_name!='' and product_name is not None:
+        page_obj = products.filter(name__icontains=product_name)
+        
+    paginator = Paginator(page_obj, 3)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj
+    }
+    return render(request, 'myapp/index.html', context)
 
 #Class basesd view for above products view [ListView]
 class ProductListView(ListView):
