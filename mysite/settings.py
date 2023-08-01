@@ -25,6 +25,11 @@ SECRET_KEY = 'django-insecure-0rq13c-2+&mbl92w6qipwm74)whm*dd)y@wzz)pn!mz#(tf_wp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Fake Stripe Key, sample only
+if DEBUG:
+    STRIPE_PUBLISHABLE_KEY='pk_test_51BTUDGJAJfZb9fakefakefakeXO6i_dTHE67IM007EwQ4uN3'
+    STRIPE_SECRET_KEY='sk_test_tRfakefakefake4VQ2u'
+
 ALLOWED_HOSTS = []
 
 

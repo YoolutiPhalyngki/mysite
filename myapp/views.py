@@ -1,11 +1,19 @@
+from typing import Any, Dict
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-from .models import Product
-from django.views.generic import ListView, DetailView
+from .models import Product, OrderDetail
+from django.views.generic import ListView, DetailView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.core.paginator import Paginator
+
+from django.http.response import HttpResponseNotFound, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+import json
+import stripe
 
 # Create your views here.
 def index(request):
@@ -46,6 +54,12 @@ class ProductDetailView(DetailView):
     model = Product
     template_name = 'myapp/detail.html'
     context_object_name = 'product'
+    pk_url_kwarg = 'pk'
+
+    def get_context_data(self, **kwargs):
+        context = super(ProductDetailView, self).get_context_data(**kwargs)
+        context['stripe_publishable_key'] = settings.STRIPE_PUBLISHABLE_KEY
+        return context
 
 @login_required
 def add_product(request):
@@ -112,3 +126,56 @@ def my_listings(request):
         'products': products,
     }
     return render(request, 'myapp/mylistings.html', context)
+
+@csrf_exempt
+def create_checkout_session(request, id):
+    product = get_object_or_404(Product, pk=id)
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    checkout_session = stripe.checkout.Session.create(
+        customer_email = request.user.email,
+        payment_method_types=['card'],
+        line_items=[
+            {
+                'price_data':{
+                    'currency':'usd',
+                    'product_data':{
+                        'name':product.name,
+                    },
+                    'unit_amount':int(product.price *100),
+                },
+                'quantity':1,
+            }
+        ],
+        mode = 'payment',
+        success_url = request.build_absolute_uri(reverse('myapp:success'))+"?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url = request.build_absolute_uri(reverse('myapp:failed')),
+    )
+
+    # print("--------Check_OUT payment_intent-------")
+    # print(checkout_session['id'])
+    # print("--------Check_OUT Session-------")
+    # print(checkout_session)
+    order = OrderDetail()
+    order.customer_username = request.user.username
+    order.product = product
+    order.stripe_payment_intent = checkout_session['id']
+    order.amount = int(product.price*100)
+    order.save()
+    return JsonResponse({'sessionId':checkout_session.id})
+
+class PaymentSuccessView(TemplateView):
+    template_name = 'myapp/payment_success.html'
+
+    def get(self, request, *args, **kwargs):
+        session_id = request.GET.get('session_id')
+        if session_id is None:
+            return HttpResponseNotFound()
+        session = stripe.checkout.Session.retrieve(session_id)
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        order = get_object_or_404(OrderDetail, stripe_payment_intent=session.id)
+        order.has_paid = True
+        order.save()
+        return render(request, self.template_name)
+    
+class PaymentFailedView(TemplateView):
+    template_name = 'myapp/payment_failed.html'
